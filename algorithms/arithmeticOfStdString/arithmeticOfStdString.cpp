@@ -1,13 +1,17 @@
 #include"arithmeticOfStdString.h"
 #include<stack>
+#include<cstring>
+#include<regex>
 
 static int compareop(char op1,char op2);
+static bool findErrorInput(std::string inputStr);
 
 std::string calculateStdStringExpression(std::string expression)
 {
     std::stack<char> stackOfOps;
     std::stack<double> stackOfNumbers;
-
+    if(findErrorInput(expression))
+        return "";
     //运算符和操作数分别出栈，结果存储在操作数栈顶
     auto lambdaf=[&]()
                 {
@@ -137,6 +141,35 @@ std::string calculateStdStringExpression(std::string expression)
     return str;
 }
 
+std::string replaceVariable(const std::string& expression,const std::vector<std::string>& values,const std::vector<char>& variables)
+{
+    if(values.size()!=variables.size())
+        return "";
+    std::string resultstr=expression;
+    for(unsigned long i=0;i<variables.size();i++)
+    {
+        char cstr[]={variables[i],'\0'};
+        std::regex rgx(cstr);
+        resultstr=std::regex_replace(resultstr,rgx,values[i]);
+    }
+    return resultstr;
+}
+
+std::string cinReadStdStringFromStdString(std::string& source)
+{
+    std::string str="";
+    while(isspace(source[0])&&source.begin()!=source.end())
+    {
+        source.erase(source.begin());
+    }
+    while(!isspace(source[0])&&source.begin()!=source.end())
+    {
+        str+=source[0];
+        source.erase(source.begin());
+    }
+    return str;
+}
+
 //return value's sign:- op1<op2 0 op1=op2 + op1>op2
 int compareop(char op1,char op2)
 {
@@ -169,4 +202,44 @@ int compareop(char op1,char op2)
         return 0x7FFFFFFF;
     }
     return intop1-intop2;
+}
+
+static bool findErrorInput(std::string inputStr)//错误输入：true；无错误输入：false
+{
+    bool errorInput=false,isSign=false;
+    int start=0,end=0;
+    int numbers=0;
+    if(!std::strchr("-(1234567890",inputStr[0]))
+        errorInput=true;
+    if(!std::strchr(")1234567890",*(inputStr.end()-1)))
+        errorInput=true;
+    for(unsigned long i=0;i<inputStr.size();i++)
+    {
+        if(std::strchr("+-*/",inputStr[i]))
+        {
+            if(isSign)
+                errorInput=true;
+            isSign=true;
+        }
+        else
+        {
+            isSign=false;
+        }
+        if(inputStr[i]=='(')
+            start++;
+        if(inputStr[i]==')')
+            end++;
+        if(!std::strchr("+-*/()1234567890",inputStr[i]))
+            errorInput=true;
+        else
+        {
+            if(std::strchr("1234567890",inputStr[i]))
+                numbers++;
+        }
+    }
+    if(start!=end)
+        errorInput=true;
+    if(!numbers)
+        errorInput=true;
+    return errorInput;
 }
